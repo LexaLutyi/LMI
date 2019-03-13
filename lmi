@@ -1,0 +1,89 @@
+using LinearAlgebra
+
+function scalar_m(X, A, B)
+    """Scalar product <.,.>ₚ with P = Xₖ"""
+    return tr(X * A * X * B)
+end
+
+
+function gramian(X, A)
+    """Gramian matrix calculation function for system Aᵢ
+    with scalar production scalar_m"""
+    Q = zeros(length(A), length(A))
+    for i in 1:length(A)
+        for j in 1:length(A)
+            Q[i,j] = scalar_m(X, A[i], A[j])
+        end
+    end
+    return Q
+end
+
+function vect_m(X, A)
+    V = zeros(length(A))
+    for i in 1:length(V)
+        V[i] = scalar_m(X, X, A[i])
+    end
+    return V
+end
+
+function ortho_project(X, A)
+    """Orthogonal projection of matrix Xₖ onto Range(A) = {y | ∃ x: y = Ax}"""
+    gramian_A  = gramian(X, A)
+    right_part = vect_m(X, A)
+
+    coords = gramian_A \ right_part
+    coords = map(p -> isnan(p) ? 0 : p, coords)
+
+    X_ortho = zeros(size(X))
+    for i in 1:length(A)
+        X_ortho += coords[i] * A[i]
+    end
+    return X_ortho
+end
+
+function gamma(X, A)
+    X_ortho = ortho_project(X, A)
+    sqrt_matr = inv(sqrt(X))
+    ψ = sqrt_matr * (X_ortho - X) * sqrt_matr
+    ρ = maximum(map(abs, eigvals(ψ)))
+    return 1/(1+ρ)
+end
+
+function solve_lmi_sum!(X, A, max_step)
+    for i in 1:max_step
+        X_ortho = ortho_project(X, A)
+        if isposdef(X_ortho)
+            break
+        end
+        γ = gamma(X, A)
+        X⁻¹ = inv(X)
+        X = X⁻¹ - γ * X⁻¹ * (X_ortho - X) *  X⁻¹
+        X = inv(X)
+    end
+
+    if  isposdef(X_ortho)
+        println("Победа вместо обеда")
+        sol = gramian(X, A) \ vect_m(X, A)
+        println(X_ortho, eigvals(X_ortho))
+        return map(p -> isnan(p) ? 0 : p, sol)
+    else
+        println("Точно не попали")
+        return nothing
+    end
+end
+
+
+A = [[  10  1   -8;1   8   -6;-8 -6    8],
+    [ 4 5 -1; 5 -4 3;-1 3 -12],
+    [ 4 -1 0;-1 2 -7; 0 -7 8],
+    [10 -6 -8;-6 -2 5;-8 5 6],
+    [-10 -3 5; -3 10 -7;5 -7 -4],
+    [-10 0 -7; 0 -10 3; -7 3 -8]]
+X = Matrix{Float64}(I, 3, 3)
+Q = gramian(X, A)
+V = vect_m(X, A)
+X_ortho = ortho_project(X, A)
+γ = gamma(X, A)
+S = solve_lmi_sum!(X, A, 100)
+
+println(S)
