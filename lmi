@@ -18,13 +18,7 @@ function gramian(X, A)
     return Q
 end
 
-function vect_m(X, A)
-    V = zeros(length(A))
-    for i in 1:length(V)
-        V[i] = scalar_m(X, X, A[i])
-    end
-    return V
-end
+vect_m(X, A) = map(p->scalar_m(X, X, p), A)
 
 function ortho_project(X, A)
     """Orthogonal projection of matrix Xₖ onto Range(A) = {y | ∃ x: y = Ax}"""
@@ -33,23 +27,19 @@ function ortho_project(X, A)
 
     coords = gramian_A \ right_part
     coords = map(p -> isnan(p) ? 0 : p, coords)
-
-    X_ortho = zeros(size(X))
-    for i in 1:length(A)
-        X_ortho += coords[i] * A[i]
-    end
-    return X_ortho
+    return sum(coords .* A)
 end
 
 function gamma(X, A)
     X_ortho = ortho_project(X, A)
     sqrt_matr = inv(sqrt(X))
     ψ = sqrt_matr * (X_ortho - X) * sqrt_matr
-    ρ = maximum(map(abs, eigvals(ψ)))
+    ρ = maximum(abs.(eigvals(ψ)))
     return 1/(1+ρ)
 end
 
-function solve_lmi_sum!(X, A, max_step)
+function solve_lmi_sum(X, A, max_step)
+    X_ortho = zeros(size(X))
     for i in 1:max_step
         X_ortho = ortho_project(X, A)
         if isposdef(X_ortho)
@@ -79,11 +69,8 @@ A = [[  10  1   -8;1   8   -6;-8 -6    8],
     [10 -6 -8;-6 -2 5;-8 5 6],
     [-10 -3 5; -3 10 -7;5 -7 -4],
     [-10 0 -7; 0 -10 3; -7 3 -8]]
-X = Matrix{Float64}(I, 3, 3)
-Q = gramian(X, A)
-V = vect_m(X, A)
-X_ortho = ortho_project(X, A)
-γ = gamma(X, A)
-S = solve_lmi_sum!(X, A, 100)
+X = Matrix{Number}(I, 3, 3)
 
-println(S)
+S = solve_lmi_sum(X, A, 100)
+
+sum(S .* A)
