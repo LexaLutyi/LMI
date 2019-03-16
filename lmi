@@ -61,6 +61,17 @@ function solve_lmi_sum(X, A, max_step)
     end
 end
 
+function lmi_normalize(A₀)
+    Q = []
+    for i in 1:size(A)[1], j in i:size(A)[1]
+        E = spzeros(Number, size(A)...)
+        E[i ,j], E[j, i] = 1, 1
+        R = transpose(A) * E + E * A
+        push!(Q, R)
+    end
+    return Q
+end
+
 
 A = [[  10  1   -8;1   8   -6;-8 -6    8],
     [ 4 5 -1; 5 -4 3;-1 3 -12],
@@ -80,10 +91,3 @@ Aᵀ * X + X * A < 0
 """
 A = [-2 1; 3 -2]
 eigmax(A)
-Q = []
-for i in 1:size(A)[1], j in i:size(A)[1]
-    E = spzeros(Number, size(A)...)
-    E[i ,j], E[j, i] = 1, 1
-    R = transpose(A) * E + E * A
-    push!(Q, R)
-end
