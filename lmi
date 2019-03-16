@@ -1,4 +1,5 @@
 using LinearAlgebra
+using SparseArrays
 
 function scalar_m(X, A, B)
     """Scalar product <.,.>ₚ with P = Xₖ"""
@@ -10,10 +11,8 @@ function gramian(X, A)
     """Gramian matrix calculation function for system Aᵢ
     with scalar production scalar_m"""
     Q = zeros(length(A), length(A))
-    for i in 1:length(A)
-        for j in 1:length(A)
-            Q[i,j] = scalar_m(X, A[i], A[j])
-        end
+    for i, j in 1:length(A)
+        Q[i,j] = scalar_m(X, A[i], A[j])
     end
     return Q
 end
@@ -74,3 +73,17 @@ X = Matrix{Number}(I, 3, 3)
 S = solve_lmi_sum(X, A, 100)
 
 sum(S .* A)
+
+"""
+Aᵀ * X + X * A < 0
+∑-(Aᵀ * Eᵢⱼ + Eᵢⱼ * A)xᵢⱼ > 0
+"""
+A = [-2 1; 3 -2]
+eigmax(A)
+Q = []
+for i in 1:size(A)[1], j in i:size(A)[1]
+    E = spzeros(Number, size(A)...)
+    E[i ,j], E[j, i] = 1, 1
+    R = transpose(A) * E + E * A
+    push!(Q, R)
+end
