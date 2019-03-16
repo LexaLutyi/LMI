@@ -63,11 +63,11 @@ end
 
 function lmi_normalize(A₀)
     Q = []
-    for i in 1:size(A)[1], j in i:size(A)[1]
-        E = spzeros(Number, size(A)...)
+    for i in 1:size(A₀)[1], j in i:size(A₀)[1]
+        E = spzeros(Number, size(A₀)...)
         E[i ,j], E[j, i] = 1, 1
-        R = transpose(A) * E + E * A
-        push!(Q, R)
+        R = transpose(A₀) * E + E * A₀
+        push!(Q, -R)
     end
     return Q
 end
@@ -91,3 +91,24 @@ Aᵀ * X + X * A < 0
 """
 A = [-2 1; 3 -2]
 eigmax(A)
+
+∑A = lmi_normalize(A)
+X = Matrix{Number}(I, size(A)...)
+sol = solve_lmi_sum(X, ∑A, 100)
+
+
+n = size(A)[1]
+Q = []
+for i in 1:n, j in i:n
+    push!(Q, (i, j))
+end
+
+sum(sol .* ∑A)
+Xsol = zeros(size(A))
+
+map(Q, sol) do q, x
+    Xsol[q...] = x
+    Xsol[reverse(q)...] = x
+end
+
+transpose(A) * Xsol + Xsol * A
