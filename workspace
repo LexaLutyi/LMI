@@ -26,3 +26,7 @@ map(Q, sol) do q, x
 end
 
 transpose(A) * Xsol + Xsol * A
+
+
+for i,j in 1:length(A)
+end
