@@ -1,18 +1,19 @@
 using LinearAlgebra
 using SparseArrays
 
-function scalar_m(X, A, B)
-    """Scalar product <.,.>ₚ with P = Xₖ"""
-    return tr(X * A * X * B)
-end
+
+"""Scalar product <.,.>ₚ with P = Xₖ"""
+scalar_m(X, A, B) = tr(X * A * X * B)
 
 
 function gramian(X, A)
     """Gramian matrix calculation function for system Aᵢ
     with scalar production scalar_m"""
     Q = zeros(length(A), length(A))
-    for i, j in 1:length(A)
-        Q[i,j] = scalar_m(X, A[i], A[j])
+    for i in 1:length(A)
+        for j in 1:length(A)
+            Q[i,j] = scalar_m(X, A[i], A[j])
+        end
     end
     return Q
 end
@@ -71,44 +72,3 @@ function lmi_normalize(A₀)
     end
     return Q
 end
-
-
-A = [[  10  1   -8;1   8   -6;-8 -6    8],
-    [ 4 5 -1; 5 -4 3;-1 3 -12],
-    [ 4 -1 0;-1 2 -7; 0 -7 8],
-    [10 -6 -8;-6 -2 5;-8 5 6],
-    [-10 -3 5; -3 10 -7;5 -7 -4],
-    [-10 0 -7; 0 -10 3; -7 3 -8]]
-X = Matrix{Number}(I, 3, 3)
-
-S = solve_lmi_sum(X, A, 100)
-
-sum(S .* A)
-
-"""
-Aᵀ * X + X * A < 0
-∑-(Aᵀ * Eᵢⱼ + Eᵢⱼ * A)xᵢⱼ > 0
-"""
-A = [-2 1; 3 -2]
-eigmax(A)
-
-∑A = lmi_normalize(A)
-X = Matrix{Number}(I, size(A)...)
-sol = solve_lmi_sum(X, ∑A, 100)
-
-
-n = size(A)[1]
-Q = []
-for i in 1:n, j in i:n
-    push!(Q, (i, j))
-end
-
-sum(sol .* ∑A)
-Xsol = zeros(size(A))
-
-map(Q, sol) do q, x
-    Xsol[q...] = x
-    Xsol[reverse(q)...] = x
-end
-
-transpose(A) * Xsol + Xsol * A
