@@ -1,0 +1,32 @@
+
+"""
+Aᵀ * X + X * A < 0
+∑-(Aᵀ * Eᵢⱼ + Eᵢⱼ * A)xᵢⱼ > 0
+"""
+A = [0 1; -1 0]
+eigvals(A)
+
+∑A = lmi_normalize(A)
+X = Matrix{Number}(I, size(A)...)
+sol = solve_lmi_sum(X, ∑A, 100)
+
+
+n = size(A)[1]
+Q = []
+for i in 1:n, j in i:n
+    push!(Q, (i, j))
+end
+
+sum(sol .* ∑A)
+Xsol = zeros(size(A))
+
+map(Q, sol) do q, x
+    Xsol[q...] = x
+    Xsol[reverse(q)...] = x
+end
+
+transpose(A) * Xsol + Xsol * A
+
+
+for i,j in 1:length(A)
+end
